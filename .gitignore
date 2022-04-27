@@ -20,6 +20,7 @@ __pycache__/
 *.egg-info/
 .installed.cfg
 *.egg
+*.exe
 
 # data
 data*/
