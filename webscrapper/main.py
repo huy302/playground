@@ -4,14 +4,16 @@ web scrapping sample code
 
 from splinter import Browser
 from splinter.exceptions import ElementDoesNotExist
-from bs4 import BeautifulSoup as bs
 import numpy as np
 import pandas as pd
 import time
 
+import secrets
+
 # ================== input values ==================
 
-drilling_days = 20
+selected_play = 'Bakken Shale'
+drilling_days = 30
 
 # ================== functions ==================
 
@@ -22,32 +24,73 @@ def init_browser():
 def scrape_info(drilling_days: int) -> dict:
     browser = init_browser()
 
-    # TODO: login if needed
-    costanalyst_url = 'http://sna-powertrain-orange.ihsmarkit.com/#/unconv/cost/costAnalysisGrid'
-    welldata_url = 'http://sna-powertrain-orange.ihsmarkit.com/#/asset/2554/welldata'
-    costsummary_url = 'http://sna-powertrain-orange.ihsmarkit.com/#/asset/2554/costsummary/summary'
+    login_url = 'http://spowertrain-orange.ihsmarkit.com/Account/Login'
+    costanalyst_url = 'http://spowertrain-orange.ihsmarkit.com/Account/RedirectTo?returnUrl=http%3A%2F%2Fsna-powertrain-orange.ihsmarkit.com%2F'
 
-    # visit cost analyst grid
+    # login
+    browser.visit(login_url)
+    browser.find_by_id('UserName').fill(secrets.login_creds['username'])
+    browser.find_by_id('Password').fill(secrets.login_creds['password'])
+    browser.execute_script("document.getElementsByTagName('form')[1].submit()")
+    time.sleep(2) # wait for content to load
+
+    # visit cost analysis page
     browser.visit(costanalyst_url)
+    time.sleep(2) # wait for content to load
+    # click on 'Cost Analysis Grid' button
+    tries = 0
+    while True:
+        tries += 1
+        if tries > 5:
+            raise Exception('Failed to click on "Cost Analysis Grid" button')
+        try:
+            browser.execute_script('[].slice.call(document.querySelectorAll("button")).filter(b => b.textContent.match(" Cost Analysis Grid"))[0].click()')
+            break
+        except Exception as e:
+            # sleep and try again later
+            # TODO: log the error
+            print(e)
+            time.sleep(2)
+    time.sleep(2) # wait for content to load
 
-    # TODO: select Play/Subplay
-
-    # scrape page into Soup
-    html = browser.html
-    soup = bs(html, "html.parser")
+    # select Play/Subplay
+    play_dropdown = browser.find_by_css('div[class="cost-analysis-grid-header-play-subplay"]').first.find_by_tag('select').first
+    play_dropdown.find_by_text(selected_play).click()
+    time.sleep(2) # wait for content to load
     
+    # click on Well Data pencil button
+    browser.find_by_css('i[class="fa fa-pencil-square fa-2x"]').first.click()
+    time.sleep(2) # wait for content to load
 
-    # # wait for data to load
-    # time.sleep(3) 
+    # set drilling days and hit Save
+    browser.find_by_id('DrillingDays').fill(drilling_days)
+    browser.find_by_text('Save').click()
+    time.sleep(2) # wait for content to save
+    # browser.fill('\n') # hit Enter to bypass the alert box
+    tries = 0
+    while True:
+        tries += 1
+        if tries > 5:
+            raise Exception('Failed to dismiss Alert message')
+        try:
+            alert = browser.get_alert()
+            alert.accept()
+            break
+        except Exception as e:
+            # sleep and try again later
+            # TODO: log the error
+            print(e)
+            time.sleep(2)
 
-    
-        
+    # click on Cost Summary and return results
+    browser.find_by_text('Cost Summary').click()
+    total_capex = browser.find_by_id('curCapexTotalThis').value
+    drilling_total = browser.find_by_id('curDrillTotalThis').value
 
-    return {'Drilling Total' : 0.0}
+    return {'Total Capex' : total_capex, 'Drilling Total': drilling_total}
 
 # ================== main code ==================
 
 if __name__ == "__main__":
     data = scrape_info(drilling_days)
-    # df = pd.DataFrame(data, columns =['code', 'link', 'price', 'bed', 'bath', 'sqft'])
-    # df.to_csv("zillow.csv")
+    print(data)
