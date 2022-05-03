@@ -10,10 +10,11 @@ import time
 
 import secrets
 
-# ================== input values ==================
+# ================== input variables ==================
 
 selected_play = 'Bakken Shale'
-drilling_days = 30
+drilling_days = [20, 35, 40]
+mod_factors = [1.5, 1.75, 2]
 
 # ================== functions ==================
 
@@ -66,9 +67,9 @@ def set_play(browser: Browser, play: str) -> None:
     browser.find_by_css('i[class="fa fa-pencil-square fa-2x"]').first.click()
     time.sleep(2) # wait for content to load
 
-def set_drilling_days(browser: Browser, drilling_days: int) -> dict:
+def set_drilling_days(browser: Browser, drilling_days: int) -> None:
     '''
-    Set drilling days and return results
+    Set drilling days and save
     '''
     # go to Well Data tab
     browser.find_by_text('Well Data').click()
@@ -91,12 +92,29 @@ def set_drilling_days(browser: Browser, drilling_days: int) -> dict:
             print(e)
             time.sleep(2)
 
-    # click on Cost Summary and return results
+def set_mod_factor(browser: Browser, mod_factor: float) -> None:
+    '''
+    Set modification factor and save
+    '''
+    # go to Drilling Cost tab
+    browser.find_by_text('Drilling Cost').first.click()
+    # edit Permit and Survey cost sheet
+    browser.find_by_text('Permit and Survey').first.find_by_xpath('..').first.find_by_css('i[class="fa fa-pencil-square-o fa-2x"]').first.click()
+    # set modification factor, comments and hit Save
+    browser.find_by_id('ModificationFactor').fill(str(mod_factor))
+    browser.find_by_id('modCommentsForEdit').fill('Automated service')
+    browser.find_by_text('Save').click()
+    time.sleep(1) # wait for content to save
+
+def extract_cost(browser: Browser) -> dict:
+    '''
+    Click on Cost Summary and return results
+    '''
     browser.find_by_text('Cost Summary').click()
     total_capex = browser.find_by_id('curCapexTotalThis').value
     drilling_total = browser.find_by_id('curDrillTotalThis').value
-
-    return {'Total Capex' : total_capex, 'Drilling Total': drilling_total}
+    completion_total = browser.find_by_id('curCompTotalThis').value
+    return {'Total Capex' : total_capex, 'Drilling Total': drilling_total, 'Completion Total': completion_total}
 
 # ================== main code ==================
 
@@ -105,6 +123,18 @@ if __name__ == "__main__":
     login(browser)
     set_play(browser, selected_play)
     
-    for drilling_day in [20, 35, 40]:
-        result = set_drilling_days(browser, drilling_day)
-        print(f'Drilling Days: {drilling_day} - {result}')
+    for drilling_day in drilling_days:
+        set_drilling_days(browser, drilling_day)
+        print(f'Drilling Days: {drilling_day} - {extract_cost(browser)}')
+    
+    for mod_factor in mod_factors:
+        set_mod_factor(browser, mod_factor)
+        print(f'Modification Factor: {mod_factor} - {extract_cost(browser)}')
+    
+    for drilling_day in drilling_days:
+        set_drilling_days(browser, drilling_day)
+        print(f'Drilling Days: {drilling_day} - {extract_cost(browser)}')
+    
+    for mod_factor in mod_factors:
+        set_mod_factor(browser, mod_factor)
+        print(f'Modification Factor: {mod_factor} - {extract_cost(browser)}')
