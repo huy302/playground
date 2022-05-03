@@ -21,9 +21,10 @@ def init_browser():
     executable_path = {'executable_path': 'chromedriver.exe'}
     return Browser('chrome', **executable_path, headless=False)
 
-def scrape_info(drilling_days: int) -> dict:
-    browser = init_browser()
-
+def login(browser: Browser) -> None:
+    '''
+    System login
+    '''
     login_url = 'http://spowertrain-orange.ihsmarkit.com/Account/Login'
     costanalyst_url = 'http://spowertrain-orange.ihsmarkit.com/Account/RedirectTo?returnUrl=http%3A%2F%2Fsna-powertrain-orange.ihsmarkit.com%2F'
 
@@ -53,20 +54,28 @@ def scrape_info(drilling_days: int) -> dict:
             time.sleep(2)
     time.sleep(2) # wait for content to load
 
+def set_play(browser: Browser, play: str) -> None:
+    '''
+    Set Play/Subplay and navigate to Well Data panel
+    '''
     # select Play/Subplay
     play_dropdown = browser.find_by_css('div[class="cost-analysis-grid-header-play-subplay"]').first.find_by_tag('select').first
-    play_dropdown.find_by_text(selected_play).click()
+    play_dropdown.find_by_text(play).click()
     time.sleep(2) # wait for content to load
-    
     # click on Well Data pencil button
     browser.find_by_css('i[class="fa fa-pencil-square fa-2x"]').first.click()
     time.sleep(2) # wait for content to load
 
+def set_drilling_days(browser: Browser, drilling_days: int) -> dict:
+    '''
+    Set drilling days and return results
+    '''
+    # go to Well Data tab
+    browser.find_by_text('Well Data').click()
     # set drilling days and hit Save
     browser.find_by_id('DrillingDays').fill(drilling_days)
     browser.find_by_text('Save').click()
     time.sleep(2) # wait for content to save
-    # browser.fill('\n') # hit Enter to bypass the alert box
     tries = 0
     while True:
         tries += 1
@@ -92,5 +101,10 @@ def scrape_info(drilling_days: int) -> dict:
 # ================== main code ==================
 
 if __name__ == "__main__":
-    data = scrape_info(drilling_days)
-    print(data)
+    browser = init_browser()
+    login(browser)
+    set_play(browser, selected_play)
+    
+    for drilling_day in [20, 35, 40]:
+        result = set_drilling_days(browser, drilling_day)
+        print(f'Drilling Days: {drilling_day} - {result}')
