@@ -3,9 +3,6 @@ web scrapping sample code
 '''
 
 from splinter import Browser
-from splinter.exceptions import ElementDoesNotExist
-import numpy as np
-import pandas as pd
 import time
 
 import secrets
@@ -40,19 +37,7 @@ def login(browser: Browser) -> None:
     browser.visit(costanalyst_url)
     time.sleep(2) # wait for content to load
     # click on 'Cost Analysis Grid' button
-    tries = 0
-    while True:
-        tries += 1
-        if tries > 5:
-            raise Exception('Failed to click on "Cost Analysis Grid" button')
-        try:
-            browser.execute_script('[].slice.call(document.querySelectorAll("button")).filter(b => b.textContent.match(" Cost Analysis Grid"))[0].click()')
-            break
-        except Exception as e:
-            # sleep and try again later
-            # TODO: log the error
-            print(e)
-            time.sleep(2)
+    browser.find_by_text(' Cost Analysis Grid').click()
     time.sleep(2) # wait for content to load
 
 def set_play(browser: Browser, play: str) -> None:
@@ -77,20 +62,8 @@ def set_drilling_days(browser: Browser, drilling_days: int) -> None:
     browser.find_by_id('DrillingDays').fill(drilling_days)
     browser.find_by_text('Save').click()
     time.sleep(2) # wait for content to save
-    tries = 0
-    while True:
-        tries += 1
-        if tries > 5:
-            raise Exception('Failed to dismiss Alert message')
-        try:
-            alert = browser.get_alert()
-            alert.accept()
-            break
-        except Exception as e:
-            # sleep and try again later
-            # TODO: log the error
-            print(e)
-            time.sleep(2)
+    alert = browser.get_alert()
+    alert.accept()
 
 def set_mod_factor(browser: Browser, mod_factor: float) -> None:
     '''
