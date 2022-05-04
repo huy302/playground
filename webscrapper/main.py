@@ -3,6 +3,7 @@ web scrapping sample code
 '''
 
 from splinter import Browser
+from selenium.common.exceptions import ElementClickInterceptedException
 import time
 
 import secrets
@@ -73,10 +74,15 @@ def set_mod_factor(browser: Browser, mod_factor: float) -> None:
     browser.find_by_text('Drilling Cost').first.click()
     # edit Permit and Survey cost sheet
     browser.find_by_text('Permit and Survey').first.find_by_xpath('..').first.find_by_css('i[class="fa fa-pencil-square-o fa-2x"]').first.click()
-    # set modification factor, comments and hit Save
+    # set modification factor, comments
     browser.find_by_id('ModificationFactor').fill(str(mod_factor))
-    browser.find_by_id('modCommentsForEdit').fill('Automated service')
-    browser.find_by_text('Save').click()
+    if mod_factor != 1:
+        browser.find_by_id('modCommentsForEdit').fill('Automated service')
+    # try to hit Save, if Save is disabled then hit Cancel
+    try:
+        browser.find_by_text('Save').click()
+    except ElementClickInterceptedException:
+        browser.find_by_text('Cancel').click()
     time.sleep(1) # wait for content to save
 
 def extract_cost(browser: Browser) -> dict:
