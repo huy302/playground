@@ -45,6 +45,7 @@ forecast = model.predict(test_df[['ds']])
 y_true = test_df['y'].values
 y_pred = forecast['yhat'].values
 print(f'MAE = {mean_absolute_error(y_true, y_pred)}')
+print(f'Accuracy = {(1-sum(abs(y_true-y_pred))/sum(y_true))*100} (%)')
 # plot expected vs actual
 plt.plot(y_true, label='Actual')
 plt.plot(y_pred, label='Predicted')
