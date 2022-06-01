@@ -1,4 +1,6 @@
 import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_absolute_error
 from fbprophet import Prophet
 
 df = pd.read_csv('https://raw.githubusercontent.com/jbrownlee/Datasets/master/monthly-car-sales.csv', header=0)
@@ -35,3 +37,16 @@ fig1 = model.plot(forecast)
 fig2 = model.plot_components(forecast)
 
 # model eval
+train_df = df.drop(df.index[-12:])
+test_df = df.loc[df.index[-12:],:]
+model = Prophet()
+model.fit(train_df)
+forecast = model.predict(test_df[['ds']])
+y_true = test_df['y'].values
+y_pred = forecast['yhat'].values
+print(f'MAE = {mean_absolute_error(y_true, y_pred)}')
+# plot expected vs actual
+plt.plot(y_true, label='Actual')
+plt.plot(y_pred, label='Predicted')
+plt.legend()
+plt.show()
