@@ -10,8 +10,25 @@ df.plot()
 df.columns = ['ds', 'y']
 df['ds']= pd.to_datetime(df['ds'])
 
-# fit
-model = Prophet()
+# adding holiday
+holiday_df = pd.DataFrame({
+    'holiday': 'some random holidays',
+    'ds': pd.to_datetime(['1962-03-01', '1962-09-16', 
+                          '1963-03-01', '1963-09-16',
+                          '1964-03-01', '1964-09-16',
+                          '1965-03-01', '1965-09-16',
+                          '1966-03-01', '1966-09-16',
+                          '1967-03-01', '1967-09-16']),
+    'lower_window': -1,
+    'upper_window': 0,
+})
+
+# # fit
+# model = Prophet()
+# model.fit(df)
+
+# fit with holiday
+model = Prophet(holidays=holiday_df)
 model.fit(df)
 
 # forecast
