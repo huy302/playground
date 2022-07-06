@@ -5,27 +5,9 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 from tqdm import tqdm
-
-n_assets = 10
-
-hour_list = []
-asset_list = []
-year_list = []
-forecast_list = []
-
-# one_year_hour_list = list(range(1, 365*24 + 1))
-# asset_hour_list = []
-# for fc in range(1, 5):
-#     for i in range(30):
-#         asset_hour_list += one_year_hour_list
-hour_list = list(range(1, 365*24*30 + 1))
-asset_hour_list = []
-for fc in range(1, 5):
-    asset_hour_list += hour_list
-asset_year_list = []
-for fc in range(1, 5):
-    for i in range(30):
-        asset_year_list += list(np.full(365*24, i+1))
+import logging
+from configure_logging import configure_logging
+from snowflake_db_manager import Snowflake_DBManager
 
 def generate_asset(asset_id):
     n_val_per_forecast = 365*24*30
@@ -45,21 +27,38 @@ def generate_asset(asset_id):
             forecast_values = np.append(forecast_values, forecast_values_fc)
     return asset_id_values, forecast_values, values
 
+if __name__ == "__main__":
+    configure_logging()
 
-results = Parallel(n_jobs=-1)(delayed(generate_asset)(asset_id) for asset_id in tqdm(range(n_assets)))
-len(results[0][0])
+    n_assets = 1000
 
-all_hour = []
-all_year = []
-all_asset = []
-all_forecast = []
-all_values = []
-for i in tqdm(range(n_assets)):
-    all_hour += asset_hour_list
-    all_year += asset_year_list
-    all_asset += list(results[i][0])
-    all_forecast += list(results[i][1])
-    all_values += list(results[i][2])
+    hour_list = []
+    asset_list = []
+    year_list = []
+    forecast_list = []
 
-df = pd.DataFrame({'Hour': all_hour, 'Year': all_year, 'Asset': all_asset, 'Forecast': all_forecast, 'Values': all_values})
-df.to_csv('power.csv', index=False)
+    db_manager = Snowflake_DBManager('HUYNA_TEST')
+
+    hour_list = list(range(1, 365*24*30 + 1))
+    asset_hour_list = []
+    for fc in range(1, 5):
+        asset_hour_list += hour_list
+    asset_year_list = []
+    for fc in range(1, 5):
+        for i in range(30):
+            asset_year_list += list(np.full(365*24, i+1))
+
+    results = Parallel(n_jobs=-1)(delayed(generate_asset)(asset_id) for asset_id in tqdm(range(n_assets)))
+    len(results[0][0])
+
+    # write each asset to snowflake
+    for i in range(n_assets):
+        logging.info(f'============ Processing asset {i} ============')
+        asset_df = pd.DataFrame({
+            'Hour': asset_hour_list,
+            'Year': asset_year_list,
+            'Asset': list(results[i][0]),
+            'Forecast': list(results[i][1]),
+            'Vals': list(results[i][2])
+        })
+        db_manager.write_db(asset_df, 'POWER_ASSETS', f'asset {i}')
