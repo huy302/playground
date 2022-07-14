@@ -49,7 +49,6 @@ if __name__ == "__main__":
             asset_year_list += list(np.full(365*24, i+1))
 
     results = Parallel(n_jobs=-1)(delayed(generate_asset)(asset_id) for asset_id in tqdm(range(n_assets)))
-    len(results[0][0])
 
     # write each asset to snowflake
     for i in range(n_assets):
@@ -61,4 +60,27 @@ if __name__ == "__main__":
             'Forecast': list(results[i][1]),
             'Vals': list(results[i][2])
         })
+        asset_df['Hour'] = asset_df['Hour'].astype(float) # force float to avoid Spotfire mistakenly convert it to currency
+        asset_df['Year'] = asset_df['Year'].astype(float)
         db_manager.write_db(asset_df, 'POWER_ASSETS', f'asset {i}')
+
+    # # write assets to chunks of csv for omnisci import
+    # chunk_size = 10
+    # chunk_count = 1
+    # df_list = []
+    # for i in tqdm(range(n_assets)):
+    #     asset_df = pd.DataFrame({
+    #         'Hour': asset_hour_list,
+    #         'Year': asset_year_list,
+    #         'Asset': list(results[i][0]),
+    #         'Forecast': list(results[i][1]),
+    #         'Vals': list(results[i][2])
+    #     })
+    #     asset_df['Hour'] = asset_df['Hour'].astype(float) # force float to avoid Spotfire mistakenly convert it to currency
+    #     asset_df['Year'] = asset_df['Year'].astype(float)
+    #     df_list.append(asset_df)
+    #     if i % chunk_size == 0:
+    #         chunk_df = pd.concat(df_list, ignore_index=True)
+    #         chunk_df.to_csv(f'output/chunk_{chunk_count}.csv.gz', index=False)
+    #         chunk_count += 1
+    #         df_list = []
