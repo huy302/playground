@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+# Distribution / packaging / vscode
+.vscode
+.Python
+/env/
+/build/
+*.egg-info/
+.installed.cfg
+*.egg
+*.csv
+/model_data/
+/model_prediction/
+
+# secrets
+parameters.py

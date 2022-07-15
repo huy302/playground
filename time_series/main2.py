@@ -1,4 +1,6 @@
 import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_absolute_error
 from fbprophet import Prophet
 
 df = pd.read_csv('https://raw.githubusercontent.com/jbrownlee/Datasets/master/monthly-car-sales.csv', header=0)
@@ -8,8 +10,25 @@ df.plot()
 df.columns = ['ds', 'y']
 df['ds']= pd.to_datetime(df['ds'])
 
-# fit
-model = Prophet()
+# adding holiday
+holiday_df = pd.DataFrame({
+    'holiday': 'some random holidays',
+    'ds': pd.to_datetime(['1962-03-01', '1962-09-16', 
+                          '1963-03-01', '1963-09-16',
+                          '1964-03-01', '1964-09-16',
+                          '1965-03-01', '1965-09-16',
+                          '1966-03-01', '1966-09-16',
+                          '1967-03-01', '1967-09-16']),
+    'lower_window': -1,
+    'upper_window': 0,
+})
+
+# # fit
+# model = Prophet()
+# model.fit(df)
+
+# fit with holiday
+model = Prophet(holidays=holiday_df)
 model.fit(df)
 
 # forecast
@@ -35,3 +54,17 @@ fig1 = model.plot(forecast)
 fig2 = model.plot_components(forecast)
 
 # model eval
+train_df = df.drop(df.index[-12:])
+test_df = df.loc[df.index[-12:],:]
+model = Prophet()
+model.fit(train_df)
+forecast = model.predict(test_df[['ds']])
+y_true = test_df['y'].values
+y_pred = forecast['yhat'].values
+print(f'MAE = {mean_absolute_error(y_true, y_pred)}')
+print(f'Accuracy = {(1-sum(abs(y_true-y_pred))/sum(y_true))*100} (%)')
+# plot expected vs actual
+plt.plot(y_true, label='Actual')
+plt.plot(y_pred, label='Predicted')
+plt.legend()
+plt.show()
