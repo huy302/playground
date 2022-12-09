@@ -1,0 +1,7 @@
+pandas
+numpy
+snowflake-connector-python
+snowflake-snowpark-python
+xgboost==1.5.0
+scikit-learn==1.1.1
+shap==0.39.0

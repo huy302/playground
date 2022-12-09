@@ -1,0 +1,30 @@
+.DS_Store
+.vs
+.idea
+.terraform*
+*.tfvars*
+*.tfstate*
+*.zip
+*.csproj.user
+
+# Byte-compiled / optimized / DLL files
+.vscode/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+# Distribution / packaging
+.Python
+/env/
+/build/
+*.egg-info/
+.installed.cfg
+*.egg
+*.exe
+
+# data
+output*/
+*.csv
+
+# secrets
+*secrets*
